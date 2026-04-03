@@ -19,7 +19,7 @@ const handler = NextAuth({
     providers:[
         GitHubProvider({
             clientId:process.env.CLIENT_ID!,
-            clientSecret:process.env.CLIENAT_SECRET!,
+            clientSecret:process.env.CLIENT_SECRET!,
             authorization:{
                 params:{
                     scope : "read:user user:email repo"
