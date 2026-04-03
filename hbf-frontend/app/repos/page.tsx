@@ -1,12 +1,15 @@
 "use client"
 
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
 export default function Repos() {
     const {data:session} = useSession()
     
     const [repos,setRepos]= useState([])
+
+    const router = useRouter()
 
     useEffect(()=>{
         if (session?.accessToken){
@@ -27,7 +30,7 @@ export default function Repos() {
                 <div
                   key={repo.id}
                   className="border rounded-lg p-4 mb-3 cursor-pointer hover:bg-gray-100 hover:text-black transition"
-                  onClick={() => window.open(repo.html_url, "_blank")}
+                  onClick={()=>router.push(`/repos/${repo.owner.login}/${repo.name}`)}
                 >
                   <h2 className="font-semibold text-lg">{repo.full_name}</h2>
                   <p className="text-sm text-gray-500">
