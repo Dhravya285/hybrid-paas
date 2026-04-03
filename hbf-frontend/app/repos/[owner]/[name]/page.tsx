@@ -1,15 +1,24 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { headers } from "next/headers";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function RepoPage() {
   const { owner, name } = useParams();
-
+  const {data:session}=useSession()
   const [data, setData] = useState<any>();
 
   useEffect(() => {
-       fetch(`https://api.github.com/repos/${owner}/${name}`)
+       fetch(
+        `https://api.github.com/repos/${owner}/${name}`,
+        {   
+            headers:{
+                Authorization: `Bearer ${session?.accessToken}`
+            }
+        }
+        )
       .then((res)=> res.json())
       .then(setData)      
   }, [owner, name]);
