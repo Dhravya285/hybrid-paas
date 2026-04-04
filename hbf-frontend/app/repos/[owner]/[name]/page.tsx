@@ -70,7 +70,6 @@ export default function RepoPage() {
   return (
     <div className="h-screen flex text-white px-16 py-10 gap-20">
 
-      {/* LEFT */}
       <div className="w-1/2">
         <h1 className="text-2xl font-semibold mb-3">
           {data.full_name}
@@ -100,7 +99,6 @@ export default function RepoPage() {
         </a>
       </div>
 
-      {/* RIGHT */}
       <div className="w-1/2 max-w-md">
 
         <h2 className="text-lg font-semibold mb-6">
