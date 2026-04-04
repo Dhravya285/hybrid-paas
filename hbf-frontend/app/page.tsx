@@ -29,7 +29,7 @@ export default function Home() {
       ) : (
         <button
           onClick={() => signIn("github")}
-          className="px-4 py-2 bg-black text-white rounded"
+          className="px-4 py-2 bg-white text-black rounded"
         >
           Sign in with GitHub
         </button>
