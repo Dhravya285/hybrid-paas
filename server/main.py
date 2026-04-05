@@ -1,17 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from routes.auth import router as auth_router
+from routes.ecr import router as ecr_router
 
-from config.db import get_db,Base,eng
+app = FastAPI(title="Hybrid PaaS API")
 
-app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-Base.metadata.create_all(bind = eng)
+app.include_router(auth_router)
+app.include_router(ecr_router)
 
 @app.get("/health")
-async def health():
-        return {
-                "message":"status running"
-        }
-
-
-
-
+def health():
+    return {"status": "ok"}

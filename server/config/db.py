@@ -1,29 +1,25 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-import os
-from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from config.main import settings
 
-load_dotenv()
-
-url = os.getenv("DATABASE_URL")
-eng = create_engine(
-    url,
-    pool_pre_ping= True,
-    pool_size=5,
-    max_overflow=10
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,          # set True to log all SQL — useful during dev
+    pool_size=10,
+    max_overflow=20,
 )
 
-SessionLocal = sessionmaker(
-    autocommit = False,
-    autoflush=False,
-    bind=eng
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    expire_on_commit=False,
+    class_=AsyncSession,
 )
 
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally :
-        db.close()
+async def get_db() -> AsyncSession:
+    """FastAPI dependency — yields a DB session, closes it after request."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise

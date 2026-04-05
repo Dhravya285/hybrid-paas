@@ -1,18 +1,24 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export default function RepoPage() {
   const { owner, name } = useParams();
   const { data: session } = useSession();
+  const router = useRouter();
 
   const [data, setData] = useState<any>();
   const [branches, setBranches] = useState<any[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [tree, setTree] = useState<any[]>([]);
   const [selectedRoot, setSelectedRoot] = useState<string>("/");
+  const [buildCommand, setBuildCommand] = useState("npm run build");
+  const [runCommand, setRunCommand] = useState("npm start");
+  const [deploying, setDeploying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!owner || !name || !session?.accessToken) return;
@@ -60,6 +66,39 @@ export default function RepoPage() {
     .filter((file: any) => file.path.endsWith("package.json"))
     .map((file: any) => file.path.replace("/package.json", "") || "/");
 
+  async function handleDeploy() {
+    setDeploying(true);
+    setError(null);
+    try {
+      const res = await apiFetch("/deployments", {
+        method: "POST",
+        body: JSON.stringify({
+          repo_url:      data.clone_url,
+          repo_name:     data.name,
+          owner:         owner,
+          branch:        selectedBranch,
+          root_dir:      selectedRoot,
+          build_command: buildCommand,
+          run_command:   runCommand,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        setError(err.detail || "Deployment failed");
+        return;
+      }
+
+      const deployment = await res.json();
+      router.push(`/deployments/${deployment.id}`);
+    } catch (e) {
+      setError("Could not reach server. Is FastAPI running?");
+      console.error(e);
+    } finally {
+      setDeploying(false);
+    }
+  }
+
   if (!data)
     return (
       <div className="h-screen flex items-center justify-center text-white">
@@ -70,6 +109,7 @@ export default function RepoPage() {
   return (
     <div className="h-screen flex text-white px-16 py-10 gap-20">
 
+      {/* left — repo info */}
       <div className="w-1/2">
         <h1 className="text-2xl font-semibold mb-3">
           {data.full_name}
@@ -99,11 +139,9 @@ export default function RepoPage() {
         </a>
       </div>
 
+      {/* right — deploy form */}
       <div className="w-1/2 max-w-md">
-
-        <h2 className="text-lg font-semibold mb-6">
-          Deploy
-        </h2>
+        <h2 className="text-lg font-semibold mb-6">Deploy</h2>
 
         <div className="mb-5">
           <p className="text-sm mb-2 text-gray-400">Branch</p>
@@ -142,6 +180,8 @@ export default function RepoPage() {
         <div className="mb-5">
           <p className="text-sm mb-2 text-gray-400">Build Command</p>
           <input
+            value={buildCommand}
+            onChange={(e) => setBuildCommand(e.target.value)}
             placeholder="npm run build"
             className="w-full px-3 py-2 bg-transparent border border-gray-700 rounded"
           />
@@ -150,13 +190,24 @@ export default function RepoPage() {
         <div className="mb-6">
           <p className="text-sm mb-2 text-gray-400">Run Command</p>
           <input
+            value={runCommand}
+            onChange={(e) => setRunCommand(e.target.value)}
             placeholder="npm start"
             className="w-full px-3 py-2 bg-transparent border border-gray-700 rounded"
           />
         </div>
 
-        <button className="w-full bg-white text-black py-2 rounded hover:bg-gray-300 transition">
-          Deploy
+        {/* error message */}
+        {error && (
+          <p className="text-red-400 text-sm mb-4">{error}</p>
+        )}
+
+        <button
+          onClick={handleDeploy}
+          disabled={deploying}
+          className="w-full bg-white text-black py-2 rounded hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {deploying ? "Deploying..." : "Deploy"}
         </button>
       </div>
     </div>
