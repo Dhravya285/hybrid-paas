@@ -4,29 +4,49 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
+import { API_BASE_URL } from '../../lib/api'
+
+type RepoSummary = {
+    id: number
+    name: string
+    full_name: string
+    description: string | null
+    owner: {
+        login: string
+    }
+}
+
 export default function Repos() {
     const {data:session} = useSession()
     
-    const [repos,setRepos]= useState([])
+    const [repos,setRepos]= useState<RepoSummary[]>([])
 
     const router = useRouter()
 
-    useEffect(()=>{
-        if (session?.accessToken){
-            fetch("https://api.github.com/user/repos?per_page=100&sort=updated&direction=desc",{
-                headers:{
-                    Authorization : `Bearer ${session.accessToken}`
-                }
-            })
-            .then((res) => res.json())
-            .then(setRepos)
+    useEffect(() => {
+        const fetchRepos = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+    
+            const res = await fetch(`${API_BASE_URL}/repos`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+    
+            const data = await res.json();
+            setRepos(data);
+        };
+
+        if (session) {
+            fetchRepos();
         }
-    },[session])
+    }, [session]);
 
     return (
         
           <div className="overflow-y-auto p-4">
-            {repos.map((repo: any) => (
+            {repos.map((repo) => (
                 <div
                   key={repo.id}
                   className="border rounded-lg p-4 mb-3 cursor-pointer hover:bg-gray-100 hover:text-black transition"
