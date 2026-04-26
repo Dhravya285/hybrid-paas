@@ -1,0 +1,27 @@
+{
+  "Variables": {
+    "AWS_ACCOUNT_ID": "945219712463",
+    "PROJECT_NAME": "hybrid-paas",
+    "ECR_REPOSITORY_PREFIX": "hybrid-paas/",
+    "ECS_CLUSTER_NAME": "hybrid-paas-cluster",
+    "ECS_TASK_EXECUTION_ROLE": "arn:aws:iam::945219712463:role/hybrid-paas-ecs-task-execution-role",
+    "ECS_TASK_ROLE": "arn:aws:iam::945219712463:role/hybrid-paas-ecs-task-role",
+    "ECS_SECURITY_GROUP_IDS": "sg-0d983c3dcb40a0161",
+    "ECS_SUBNET_IDS": "subnet-0a4e94d3b1ba4ac50,subnet-0d438c559f9957336,subnet-0eaee7eb2265fb704,subnet-0c7ecdea4d2a169af,subnet-0e8746530d137a2e9,subnet-0f9857ce2813a4940",
+    "ASSIGN_PUBLIC_IP": "ENABLED",
+    "ALB_LISTENER_ARN": "arn:aws:elasticloadbalancing:us-east-1:945219712463:listener/app/hybrid-paas-alb/15d9425edfbe16a7/a05df5aea5e3c90b",
+    "ALB_DNS_NAME": "hybrid-paas-alb-146153580.us-east-1.elb.amazonaws.com",
+    "VPC_ID": "vpc-0d5eab3ce623bdfeb",
+    "PUBLIC_DOMAIN_NAME": "",
+    "CONTAINER_NAME": "app",
+    "CONTAINER_PORT": "3000",
+    "DESIRED_COUNT": "1",
+    "TASK_CPU": "512",
+    "TASK_MEMORY": "1024",
+    "HEALTH_CHECK_PATH": "/",
+    "ECS_LOG_GROUP": "/ecs/hybrid-paas",
+    "APP_ENVIRONMENT_JSON": "{}",
+    "BACKEND_CALLBACK_URL": "https://9qv9g5pn-8000.inc1.devtunnels.ms/deployments/aws-callback",
+    "BACKEND_CALLBACK_SECRET": "TLtC9O26MGsAHKizrWcq4ve07pfjbuNwmYPDd81g"
+  }
+}

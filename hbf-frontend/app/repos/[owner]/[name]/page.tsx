@@ -277,7 +277,8 @@ export default function RepoPage() {
 
       const applyPayload = (payload: DeployStreamPayload) => {
         if (payload.type === "log" && payload.message) {
-          setDeployLogs((current) => [...current, payload.message]);
+          const message = payload.message;
+          setDeployLogs((current) => [...current, message]);
         }
 
         if (payload.type === "result") {

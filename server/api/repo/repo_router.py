@@ -21,6 +21,7 @@ from models.users import User
 
 router = APIRouter()
 DEFAULT_ECR_REPOSITORY_URI = os.getenv("DEFAULT_ECR_REPOSITORY_URI", "").strip()
+AWS_DEPLOY_CALLBACK_SECRET = os.getenv("AWS_DEPLOY_CALLBACK_SECRET", "").strip()
 
 ECR_URI_PATTERN = re.compile(
     r"^(?P<registry>\d+\.dkr\.ecr\.(?P<region>[a-z0-9-]+)\.amazonaws\.com)"
@@ -38,6 +39,16 @@ class DeployRequest(BaseModel):
     ecr_repository_uri: str | None = None
     image_tag: str = Field(default="latest", min_length=1)
     aws_region: str | None = None
+
+
+class AwsDeployCallback(BaseModel):
+    image_uri: str
+    status: str
+    public_url: str | None = None
+    ecs_service_name: str | None = None
+    task_definition_arn: str | None = None
+    target_group_arn: str | None = None
+    error_message: str | None = None
 
 
 class DeployError(Exception):
@@ -359,6 +370,10 @@ def serialize_deployment(deployment: Deployment) -> dict:
         "image_tag": deployment.image_tag,
         "image_uri": deployment.image_uri,
         "status": deployment.status,
+        "public_url": deployment.public_url,
+        "ecs_service_name": deployment.ecs_service_name,
+        "ecs_task_definition_arn": deployment.ecs_task_definition_arn,
+        "ecs_target_group_arn": deployment.ecs_target_group_arn,
         "error_message": deployment.error_message,
         "created_at": deployment.created_at.isoformat() if deployment.created_at else None,
         "updated_at": deployment.updated_at.isoformat() if deployment.updated_at else None,
@@ -391,6 +406,40 @@ async def get_deployments(request: Request, db: Session = Depends(get_db)):
         .all()
     )
     return [serialize_deployment(deployment) for deployment in deployments]
+
+
+@router.post("/deployments/aws-callback")
+async def aws_deploy_callback(
+    body: AwsDeployCallback,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    if AWS_DEPLOY_CALLBACK_SECRET:
+        received_secret = request.headers.get("x-deploy-callback-secret", "")
+        if received_secret != AWS_DEPLOY_CALLBACK_SECRET:
+            raise HTTPException(status_code=401, detail="Invalid callback secret")
+
+    deployment = (
+        db.query(Deployment)
+        .filter(Deployment.image_uri == body.image_uri)
+        .order_by(Deployment.created_at.desc(), Deployment.id.desc())
+        .first()
+    )
+
+    if not deployment:
+        raise HTTPException(status_code=404, detail="Deployment not found for image URI")
+
+    deployment.status = body.status
+    deployment.public_url = body.public_url
+    deployment.ecs_service_name = body.ecs_service_name
+    deployment.ecs_task_definition_arn = body.task_definition_arn
+    deployment.ecs_target_group_arn = body.target_group_arn
+    deployment.error_message = body.error_message
+    db.add(deployment)
+    db.commit()
+    db.refresh(deployment)
+
+    return serialize_deployment(deployment)
 
 
 @router.post("/deploy/stream")
@@ -539,12 +588,12 @@ async def deploy_repo(
             yield from stream_command(["docker", "push", image_uri])
 
             if deployment is not None:
-                deployment.status = "success"
+                deployment.status = "image_pushed"
                 deployment.error_message = None
                 db.add(deployment)
                 db.commit()
 
-            yield log_payload("Deployment finished successfully")
+            yield log_payload("Image pushed successfully. AWS deployment will continue in ECS.")
             yield emit({"type": "result", "status": "success", "image_uri": image_uri})
         except DeployError as exc:
             if deployment is not None:

@@ -15,7 +15,11 @@ type Deployment = {
   repository_uri: string;
   image_tag: string;
   image_uri: string;
-  status: "running" | "success" | "error";
+  status: "running" | "image_pushed" | "deployed" | "error" | string;
+  public_url: string | null;
+  ecs_service_name: string | null;
+  ecs_task_definition_arn: string | null;
+  ecs_target_group_arn: string | null;
   error_message: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -32,8 +36,8 @@ function formatTimestamp(value: string | null): string {
   return date.toLocaleString();
 }
 
-function statusClassName(status: Deployment["status"]): string {
-  if (status === "success") return "text-green-400 border-green-500/40 bg-green-500/10";
+function statusClassName(status: string): string {
+  if (status === "success" || status === "deployed") return "text-green-400 border-green-500/40 bg-green-500/10";
   if (status === "error") return "text-red-400 border-red-500/40 bg-red-500/10";
   return "text-yellow-300 border-yellow-500/40 bg-yellow-500/10";
 }
@@ -76,9 +80,11 @@ export default function DeploymentsPage() {
     };
 
     fetchDeployments();
+    const interval = window.setInterval(fetchDeployments, 5000);
 
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [status]);
 
@@ -145,6 +151,22 @@ export default function DeploymentsPage() {
                 <p>Repository: {deployment.repository_uri}</p>
                 <p>Image tag: {deployment.image_tag}</p>
                 <p>Image URI: {deployment.image_uri}</p>
+                {deployment.public_url ? (
+                  <p>
+                    URL:{" "}
+                    <a
+                      href={deployment.public_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-300 underline underline-offset-4"
+                    >
+                      {deployment.public_url}
+                    </a>
+                  </p>
+                ) : null}
+                {deployment.ecs_service_name ? (
+                  <p>ECS service: {deployment.ecs_service_name}</p>
+                ) : null}
                 <p>Created: {formatTimestamp(deployment.created_at)}</p>
                 <p>Updated: {formatTimestamp(deployment.updated_at)}</p>
                 {deployment.error_message ? (

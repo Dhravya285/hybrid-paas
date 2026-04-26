@@ -1,0 +1,12 @@
+{
+  "name": "ecr-to-ecs-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EventBridge ECR push handler that updates an ECS service.",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-ecs": "^3.798.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.798.0"
+  }
+}

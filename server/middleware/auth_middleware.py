@@ -12,7 +12,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        public_paths = ["/auth/github", "/docs", "/openapi.json", "/health"]
+        public_paths = ["/auth/github", "/docs", "/openapi.json", "/health", "/deployments/aws-callback"]
 
         if request.url.path in public_paths:
             return await call_next(request)
